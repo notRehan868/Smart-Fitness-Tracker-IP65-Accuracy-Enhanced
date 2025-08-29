@@ -1,0 +1,49 @@
+name: Build & Deploy Smart Fitness Tracker
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Firmware
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Setup PlatformIO
+      uses: platformio/platformio-action@v2
+
+    - name: Install Dependencies
+      run: |
+        platformio update
+        platformio lib install
+
+    - name: Build Firmware
+      run: |
+        platformio run --environment esp32dev
+
+    - name: Archive Firmware
+      run: |
+        mkdir -p artifacts
+        cp .pio/build/esp32dev/firmware.bin artifacts/
+
+    - name: Commit Version or Docs Updates
+      run: |
+        git config user.name "Md Rehan Raza"
+        git config user.email "your_email@example.com"
+        git add .
+        git commit -m "Auto: update build artifacts" || echo "No changes to commit"
+        git push origin main
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: firmware-bin
+        path: artifacts/firmware.bin
+
